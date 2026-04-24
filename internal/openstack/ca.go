@@ -408,6 +408,41 @@ func ReconcileCAs(ctx context.Context, instance *corev1.OpenStackControlPlane, h
 		}
 	}
 
+	// create CA for OVN RBAC (used to sign per-node ovn-controller certificates)
+	// This CA is NOT added to the combined CA bundle — it is only used between
+	// the SB database (to verify ovn-controller client certs) and the
+	// ovn-controller nodes (whose certs are signed by this CA via cert-manager).
+	issuerLabels = map[string]string{rootCAIssuerOvnRbacLabel: ""}
+	issuerAnnotations = getIssuerAnnotations(&instance.Spec.TLS.PodLevel.Ovn.Cert)
+	err = removeIssuerLabel(
+		ctx,
+		helper,
+		corev1.OvnRbacCaName,
+		instance.Namespace,
+		issuerLabels,
+	)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	ctrlResult, err = ensureRootCA(
+		ctx,
+		instance,
+		helper,
+		issuerReq,
+		corev1.OvnRbacCaName,
+		issuerLabels,
+		issuerAnnotations,
+		bundle,
+		caOnlyBundle,
+		instance.Spec.TLS.PodLevel.Ovn.Ca,
+	)
+	if err != nil {
+		return ctrlResult, err
+	} else if (ctrlResult != ctrl.Result{}) {
+		return ctrlResult, nil
+	}
+
 	// create/update combined CA secret
 	if instance.Spec.TLS.CaBundleSecretName != "" {
 		caSecret, _, err := secret.GetSecret(ctx, helper, instance.Spec.TLS.CaBundleSecretName, instance.Namespace)

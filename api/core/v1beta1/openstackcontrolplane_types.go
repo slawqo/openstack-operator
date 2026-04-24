@@ -61,6 +61,8 @@ const (
 	OvnDbCaName = tls.DefaultCAPrefix + "ovn"
 	// LibvirtCaName -
 	LibvirtCaName = tls.DefaultCAPrefix + "libvirt"
+	// OvnRbacCaName -
+	OvnRbacCaName = tls.DefaultCAPrefix + "ovn-rbac"
 
 	// GlanceName - Default Glance name
 	GlanceName = "glance"
@@ -1242,6 +1244,11 @@ func (instance OpenStackControlPlane) GetOvnIssuer() string {
 	}
 
 	return OvnDbCaName
+}
+
+// GetOvnRbacIssuer - returns the OVN RBAC CA issuer name
+func (instance OpenStackControlPlane) GetOvnRbacIssuer() string {
+	return OvnRbacCaName
 }
 
 // GetLibvirtIssuer - returns the libvirt CA issuer name or custom if configured

@@ -266,6 +266,12 @@ spec:
                   Active probe interval from standby to active ovsdb-server remote
                 format: int32
                 type: integer
+              rbacCACertSecretName:
+                description: |-
+                  RbacCACertSecretName - The name of the K8s Secret containing the RBAC
+                  PKI CA certificate (tls.crt). Used by the SB database to verify
+                  ovn-controller client certificates when RBAC is enabled.
+                type: string
               replicas:
                 default: 1
                 description: Replicas of OVN DBCluster to run

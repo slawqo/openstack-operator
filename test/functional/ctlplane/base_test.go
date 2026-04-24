@@ -86,6 +86,7 @@ type Names struct {
 	RootCAPublicName                     types.NamespacedName
 	RootCAInternalName                   types.NamespacedName
 	RootCAOvnName                        types.NamespacedName
+	RootCAOvnRbacName                    types.NamespacedName
 	RootCALibvirtName                    types.NamespacedName
 	SelfSignedIssuerName                 types.NamespacedName
 	CustomIssuerName                     types.NamespacedName
@@ -97,7 +98,9 @@ type Names struct {
 	OVNControllerName                    types.NamespacedName
 	OVNControllerCertName                types.NamespacedName
 	OVNDbServerNBName                    types.NamespacedName
+	OVNDbServerNBCertName                types.NamespacedName
 	OVNDbServerSBName                    types.NamespacedName
+	OVNDbServerSBCertName                types.NamespacedName
 	OVNMetricsCertName                   types.NamespacedName
 	NeutronOVNCertName                   types.NamespacedName
 	OpenStackTopology                    []types.NamespacedName
@@ -131,6 +134,9 @@ func CreateNames(openstackControlplaneName types.NamespacedName) Names {
 		RootCAOvnName: types.NamespacedName{
 			Namespace: openstackControlplaneName.Namespace,
 			Name:      "rootca-ovn"},
+		RootCAOvnRbacName: types.NamespacedName{
+			Namespace: openstackControlplaneName.Namespace,
+			Name:      "rootca-ovn-rbac"},
 		RootCALibvirtName: types.NamespacedName{
 			Namespace: openstackControlplaneName.Namespace,
 			Name:      "rootca-libvirt"},
@@ -275,9 +281,17 @@ func CreateNames(openstackControlplaneName types.NamespacedName) Names {
 			Namespace: openstackControlplaneName.Namespace,
 			Name:      "ovndbcluster-nb",
 		},
+		OVNDbServerNBCertName: types.NamespacedName{
+			Namespace: openstackControlplaneName.Namespace,
+			Name:      "cert-ovndbcluster-nb-ovndbs",
+		},
 		OVNDbServerSBName: types.NamespacedName{
 			Namespace: openstackControlplaneName.Namespace,
 			Name:      "ovndbcluster-sb",
+		},
+		OVNDbServerSBCertName: types.NamespacedName{
+			Namespace: openstackControlplaneName.Namespace,
+			Name:      "cert-ovndbcluster-sb-ovndbs",
 		},
 		OVNControllerName: types.NamespacedName{
 			Namespace: openstackControlplaneName.Namespace,

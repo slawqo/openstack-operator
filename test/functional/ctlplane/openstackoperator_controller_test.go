@@ -74,6 +74,7 @@ var _ = Describe("OpenStackOperator controller", func() {
 		DeferCleanup(k8sClient.Delete, ctx, CreateCertSecret(names.RootCAInternalName))
 		DeferCleanup(k8sClient.Delete, ctx, CreateCertSecret(names.RootCAOvnName))
 		DeferCleanup(k8sClient.Delete, ctx, CreateCertSecret(names.RootCALibvirtName))
+		DeferCleanup(k8sClient.Delete, ctx, CreateCertSecret(names.RootCAOvnRbacName))
 		// create cert secrets for galera instances
 		DeferCleanup(k8sClient.Delete, ctx, th.CreateCertSecret(names.DBCertName))
 		DeferCleanup(k8sClient.Delete, ctx, th.CreateCertSecret(names.DBCell1CertName))
@@ -442,6 +443,12 @@ var _ = Describe("OpenStackOperator controller", func() {
 				g.Expect(issuer.Annotations).Should(HaveKeyWithValue(certmanager.CertDurationAnnotation, "43800h0m0s"))
 				g.Expect(issuer.Annotations).Should(Not(HaveKey(certmanager.CertRenewBeforeAnnotation)))
 			}, timeout, interval).Should(Succeed())
+			Eventually(func(g Gomega) {
+				issuer := crtmgr.GetIssuer(names.RootCAOvnRbacName)
+				g.Expect(issuer).Should(Not(BeNil()))
+				g.Expect(issuer.Annotations).Should(HaveKeyWithValue(certmanager.CertDurationAnnotation, "43800h0m0s"))
+				g.Expect(issuer.Annotations).Should(Not(HaveKey(certmanager.CertRenewBeforeAnnotation)))
+			}, timeout, interval).Should(Succeed())
 		})
 	})
 	When("TLS - A TLSe OpenStackControlplane instance is created with customized internal ca duration", func() {
@@ -497,6 +504,12 @@ var _ = Describe("OpenStackOperator controller", func() {
 				g.Expect(issuer.Annotations).Should(HaveKeyWithValue(certmanager.CertDurationAnnotation, "43800h0m0s"))
 				g.Expect(issuer.Annotations).Should(Not(HaveKey(certmanager.CertRenewBeforeAnnotation)))
 			}, timeout, interval).Should(Succeed())
+			Eventually(func(g Gomega) {
+				issuer := crtmgr.GetIssuer(names.RootCAOvnRbacName)
+				g.Expect(issuer).Should(Not(BeNil()))
+				g.Expect(issuer.Annotations).Should(HaveKeyWithValue(certmanager.CertDurationAnnotation, "43800h0m0s"))
+				g.Expect(issuer.Annotations).Should(Not(HaveKey(certmanager.CertRenewBeforeAnnotation)))
+			}, timeout, interval).Should(Succeed())
 		})
 	})
 	When("TLS - A TLSe OpenStackControlplane instance is created with customized internal cert duration", func() {
@@ -548,6 +561,12 @@ var _ = Describe("OpenStackOperator controller", func() {
 			}, timeout, interval).Should(Succeed())
 			Eventually(func(g Gomega) {
 				issuer := crtmgr.GetIssuer(names.RootCAOvnName)
+				g.Expect(issuer).Should(Not(BeNil()))
+				g.Expect(issuer.Annotations).Should(HaveKeyWithValue(certmanager.CertDurationAnnotation, "43800h0m0s"))
+				g.Expect(issuer.Annotations).Should(Not(HaveKey(certmanager.CertRenewBeforeAnnotation)))
+			}, timeout, interval).Should(Succeed())
+			Eventually(func(g Gomega) {
+				issuer := crtmgr.GetIssuer(names.RootCAOvnRbacName)
 				g.Expect(issuer).Should(Not(BeNil()))
 				g.Expect(issuer.Annotations).Should(HaveKeyWithValue(certmanager.CertDurationAnnotation, "43800h0m0s"))
 				g.Expect(issuer.Annotations).Should(Not(HaveKey(certmanager.CertRenewBeforeAnnotation)))
@@ -839,6 +858,19 @@ var _ = Describe("OpenStackOperator controller", func() {
 				g.Expect(issuer).Should(Not(BeNil()))
 				g.Expect(issuer.Spec.CA.SecretName).Should(Equal(names.RootCALibvirtName.Name))
 			}, timeout, interval).Should(Succeed())
+			Eventually(func(g Gomega) {
+				// ca cert
+				cert := crtmgr.GetCert(names.RootCAOvnRbacName)
+				g.Expect(cert).Should(Not(BeNil()))
+				g.Expect(cert.Spec.CommonName).Should(Equal(names.RootCAOvnRbacName.Name))
+				g.Expect(cert.Spec.IsCA).Should(BeTrue())
+				g.Expect(cert.Spec.IssuerRef.Name).Should(Equal(names.SelfSignedIssuerName.Name))
+				g.Expect(cert.Spec.SecretName).Should(Equal(names.RootCAOvnRbacName.Name))
+				// issuer
+				issuer := crtmgr.GetIssuer(names.RootCAOvnRbacName)
+				g.Expect(issuer).Should(Not(BeNil()))
+				g.Expect(issuer.Spec.CA.SecretName).Should(Equal(names.RootCAOvnRbacName.Name))
+			}, timeout, interval).Should(Succeed())
 		})
 
 		It("should create full ca bundle", func() {
@@ -850,6 +882,8 @@ var _ = Describe("OpenStackOperator controller", func() {
 			crtmgr.GetIssuer(names.RootCAOvnName)
 			crtmgr.GetCert(names.RootCALibvirtName)
 			crtmgr.GetIssuer(names.RootCALibvirtName)
+			crtmgr.GetCert(names.RootCAOvnRbacName)
+			crtmgr.GetIssuer(names.RootCAOvnRbacName)
 
 			Eventually(func(g Gomega) {
 				th.GetSecret(names.RootCAPublicName)
@@ -1014,7 +1048,7 @@ var _ = Describe("OpenStackOperator controller", func() {
 			//Expect(OSCtlplane.Spec.Placement.APIOverride.Route.Annotations).Should(HaveKeyWithValue("api.placement.openstack.org/timeout", "60s"))
 		})
 
-		It("should create selfsigned issuer and public, internal, libvirt and ovn CA and issuer", func() {
+		It("should create selfsigned issuer and public, internal, libvirt, ovn and ovn-rbac CA and issuer", func() {
 			OSCtlplane := GetOpenStackControlPlane(names.OpenStackControlplaneName)
 
 			Expect(OSCtlplane.Spec.TLS.Ingress.Enabled).Should(BeTrue())
@@ -1082,6 +1116,20 @@ var _ = Describe("OpenStackOperator controller", func() {
 				g.Expect(issuer.Spec.CA.SecretName).Should(Equal(names.RootCALibvirtName.Name))
 				g.Expect(issuer.Labels).Should(HaveKey(certmanager.RootCAIssuerLibvirtLabel))
 			}, timeout, interval).Should(Succeed())
+			Eventually(func(g Gomega) {
+				// ca cert
+				cert := crtmgr.GetCert(names.RootCAOvnRbacName)
+				g.Expect(cert).Should(Not(BeNil()))
+				g.Expect(cert.Spec.CommonName).Should(Equal(names.RootCAOvnRbacName.Name))
+				g.Expect(cert.Spec.IsCA).Should(BeTrue())
+				g.Expect(cert.Spec.IssuerRef.Name).Should(Equal(names.SelfSignedIssuerName.Name))
+				g.Expect(cert.Spec.SecretName).Should(Equal(names.RootCAOvnRbacName.Name))
+				// issuer
+				issuer := crtmgr.GetIssuer(names.RootCAOvnRbacName)
+				g.Expect(issuer).Should(Not(BeNil()))
+				g.Expect(issuer.Spec.CA.SecretName).Should(Equal(names.RootCAOvnRbacName.Name))
+				g.Expect(issuer.Labels).Should(HaveKey("osp-rootca-issuer-ovn-rbac"))
+			}, timeout, interval).Should(Succeed())
 
 			th.ExpectCondition(
 				names.OpenStackControlplaneName,
@@ -1107,6 +1155,8 @@ var _ = Describe("OpenStackOperator controller", func() {
 			crtmgr.GetIssuer(names.RootCAOvnName)
 			crtmgr.GetCert(names.RootCALibvirtName)
 			crtmgr.GetIssuer(names.RootCALibvirtName)
+			crtmgr.GetCert(names.RootCAOvnRbacName)
+			crtmgr.GetIssuer(names.RootCAOvnRbacName)
 
 			Eventually(func(g Gomega) {
 				th.GetSecret(names.RootCAPublicName)
@@ -1356,6 +1406,19 @@ var _ = Describe("OpenStackOperator controller", func() {
 					issuer := crtmgr.GetIssuer(names.RootCALibvirtName)
 					g.Expect(issuer).Should(Not(BeNil()))
 					g.Expect(issuer.Spec.CA.SecretName).Should(Equal(names.RootCALibvirtName.Name))
+				}, timeout, interval).Should(Succeed())
+				Eventually(func(g Gomega) {
+					// ca cert
+					cert := crtmgr.GetCert(names.RootCAOvnRbacName)
+					g.Expect(cert).Should(Not(BeNil()))
+					g.Expect(cert.Spec.CommonName).Should(Equal(names.RootCAOvnRbacName.Name))
+					g.Expect(cert.Spec.IsCA).Should(BeTrue())
+					g.Expect(cert.Spec.IssuerRef.Name).Should(Equal(names.SelfSignedIssuerName.Name))
+					g.Expect(cert.Spec.SecretName).Should(Equal(names.RootCAOvnRbacName.Name))
+					// issuer
+					issuer := crtmgr.GetIssuer(names.RootCAOvnRbacName)
+					g.Expect(issuer).Should(Not(BeNil()))
+					g.Expect(issuer.Spec.CA.SecretName).Should(Equal(names.RootCAOvnRbacName.Name))
 				}, timeout, interval).Should(Succeed())
 
 				th.ExpectCondition(
@@ -1833,6 +1896,23 @@ var _ = Describe("OpenStackOperator controller", func() {
 			}, timeout, interval).Should(Succeed())
 		})
 
+		It("should not set RBAC fields when TLS pod-level is disabled", func() {
+			Eventually(func(g Gomega) {
+				ovnDbServerSB := ovn.GetOVNDBCluster(names.OVNDbServerSBName)
+				g.Expect(ovnDbServerSB.Spec.RbacCACertSecretName).Should(BeEmpty())
+			}, timeout, interval).Should(Succeed())
+
+			Eventually(func(g Gomega) {
+				ovnDbServerNB := ovn.GetOVNDBCluster(names.OVNDbServerNBName)
+				g.Expect(ovnDbServerNB.Spec.RbacCACertSecretName).Should(BeEmpty())
+			}, timeout, interval).Should(Succeed())
+
+			Eventually(func(g Gomega) {
+				ovnController := ovn.GetOVNController(names.OVNControllerName)
+				g.Expect(ovnController.Spec.RbacIssuerName).Should(BeEmpty())
+			}, timeout, interval).Should(Succeed())
+		})
+
 		It("should remove ovn-controller if nicMappings are removed", func() {
 			// Update spec
 			Eventually(func(g Gomega) {
@@ -1901,6 +1981,68 @@ var _ = Describe("OpenStackOperator controller", func() {
 			Eventually(func(g Gomega) {
 				conditions := OpenStackControlPlaneConditionGetter(names.OpenStackControlplaneName)
 				g.Expect(conditions.Has(corev1.OpenStackControlPlaneOVNReadyCondition)).To(BeFalse())
+			}, timeout, interval).Should(Succeed())
+		})
+	})
+
+	When("A OVN OpenStackControlplane instance with TLS pod-level enabled is created", func() {
+		BeforeEach(func() {
+			// create cert secrets for rabbitmq instances
+			DeferCleanup(k8sClient.Delete, ctx, th.CreateCertSecret(names.RabbitMQCertName))
+			DeferCleanup(k8sClient.Delete, ctx, th.CreateCertSecret(names.RabbitMQCell1CertName))
+			DeferCleanup(k8sClient.Delete, ctx, th.CreateCertSecret(names.RabbitMQNotificationsCertName))
+			// create cert secrets for memcached instance
+			DeferCleanup(k8sClient.Delete, ctx, th.CreateCertSecret(names.MemcachedCertName))
+			// create cert secrets for ovn instance
+			DeferCleanup(k8sClient.Delete, ctx, th.CreateCertSecret(names.OVNNorthdCertName))
+			DeferCleanup(k8sClient.Delete, ctx, th.CreateCertSecret(names.OVNControllerCertName))
+			DeferCleanup(k8sClient.Delete, ctx, th.CreateCertSecret(names.OVNMetricsCertName))
+			DeferCleanup(k8sClient.Delete, ctx, th.CreateCertSecret(names.NeutronOVNCertName))
+			// create cert secrets for ovn db clusters (needed for TLS pod-level)
+			DeferCleanup(k8sClient.Delete, ctx, th.CreateCertSecret(names.OVNDbServerNBCertName))
+			DeferCleanup(k8sClient.Delete, ctx, th.CreateCertSecret(names.OVNDbServerSBCertName))
+
+			spec := GetDefaultOpenStackControlPlaneSpec()
+			spec["ovn"] = map[string]interface{}{
+				"enabled": true,
+				"template": map[string]interface{}{
+					"ovnDBCluster": map[string]interface{}{
+						"ovndbcluster-nb": map[string]interface{}{
+							"dbType": "NB",
+						},
+						"ovndbcluster-sb": map[string]interface{}{
+							"dbType": "SB",
+						},
+					},
+					"ovnController": map[string]interface{}{
+						"nicMappings": map[string]interface{}{
+							"datacentre": "ospbr",
+						},
+					},
+				},
+			}
+			DeferCleanup(
+				th.DeleteInstance,
+				CreateOpenStackControlPlane(names.OpenStackControlplaneName, spec),
+			)
+		})
+
+		It("should set RbacCACertSecretName on SB OVNDBCluster only", func() {
+			Eventually(func(g Gomega) {
+				ovnDbServerSB := ovn.GetOVNDBCluster(names.OVNDbServerSBName)
+				g.Expect(ovnDbServerSB.Spec.RbacCACertSecretName).Should(Equal(corev1.OvnRbacCaName))
+			}, timeout, interval).Should(Succeed())
+
+			Eventually(func(g Gomega) {
+				ovnDbServerNB := ovn.GetOVNDBCluster(names.OVNDbServerNBName)
+				g.Expect(ovnDbServerNB.Spec.RbacCACertSecretName).Should(BeEmpty())
+			}, timeout, interval).Should(Succeed())
+		})
+
+		It("should set RbacIssuerName on OVNController", func() {
+			Eventually(func(g Gomega) {
+				ovnController := ovn.GetOVNController(names.OVNControllerName)
+				g.Expect(ovnController.Spec.RbacIssuerName).Should(Equal(corev1.OvnRbacCaName))
 			}, timeout, interval).Should(Succeed())
 		})
 	})
@@ -4027,6 +4169,7 @@ var _ = Describe("OpenStackOperator controller nova cell deletion", func() {
 		DeferCleanup(k8sClient.Delete, ctx, CreateCertSecret(names.RootCAInternalName))
 		DeferCleanup(k8sClient.Delete, ctx, CreateCertSecret(names.RootCAOvnName))
 		DeferCleanup(k8sClient.Delete, ctx, CreateCertSecret(names.RootCALibvirtName))
+		DeferCleanup(k8sClient.Delete, ctx, CreateCertSecret(names.RootCAOvnRbacName))
 	})
 
 	When("openstack galera and rabbitmq deletion by cell", func() {

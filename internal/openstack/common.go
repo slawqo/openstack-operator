@@ -70,6 +70,10 @@ const (
 	// caCertSelector selector passed to cert-manager to set on the ca cert secret
 	caCertSelector = "ca-cert"
 
+	// rootCAIssuerOvnRbacLabel labels the OVN RBAC CA issuer.
+	// TODO: upstream this to lib-common certmanager module alongside the other RootCAIssuer*Label constants.
+	rootCAIssuerOvnRbacLabel = "osp-rootca-issuer-ovn-rbac"
+
 	// ReconcileTriggerAnnotation - Generic annotation to trigger reconciliation and webhook.
 	// Value is typically a timestamp to ensure annotation changes trigger updates
 	// Used by controller to trigger UPDATE webhook when needed (e.g., for service name caching, field migrations)

@@ -208,6 +208,12 @@ func ReconcileOVNDbClusters(ctx context.Context, instance *corev1beta1.OpenStack
 			dbcluster.MetricsTLS.CaBundleSecretName = instance.Status.TLS.CaBundleSecretName
 		}
 
+		// Pass the RBAC CA cert secret name to SB DB clusters so they can
+		// build a combined CA bundle for verifying ovn-controller client certs
+		if instance.Spec.TLS.PodLevel.Enabled && dbcluster.DBType == ovnv1.SBDBType {
+			dbcluster.RbacCACertSecretName = corev1beta1.OvnRbacCaName
+		}
+
 		if dbcluster.NodeSelector == nil {
 			dbcluster.NodeSelector = &instance.Spec.NodeSelector
 		}
@@ -491,6 +497,12 @@ func ReconcileOVNController(ctx context.Context, instance *corev1beta1.OpenStack
 	if instance.Spec.TLS.PodLevel.Enabled && ovnMetricsCertName != "" {
 		ovnControllerSpec.MetricsTLS.SecretName = &ovnMetricsCertName
 		ovnControllerSpec.MetricsTLS.CaBundleSecretName = instance.Status.TLS.CaBundleSecretName
+	}
+
+	// Pass the RBAC CA issuer name so the OVNController can create per-node
+	// cert-manager Certificate resources for OVN RBAC
+	if instance.Spec.TLS.PodLevel.Enabled {
+		ovnControllerSpec.RbacIssuerName = instance.GetOvnRbacIssuer()
 	}
 
 	if ovnControllerSpec.NodeSelector == nil {

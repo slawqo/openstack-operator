@@ -13617,6 +13617,8 @@ spec:
                           ovsLogLevel:
                             default: info
                             type: string
+                          rbacIssuerName:
+                            type: string
                           resources:
                             properties:
                               claims:
@@ -13751,6 +13753,8 @@ spec:
                               default: 60000
                               format: int32
                               type: integer
+                            rbacCACertSecretName:
+                              type: string
                             replicas:
                               default: 1
                               format: int32
