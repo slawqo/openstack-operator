@@ -24,6 +24,12 @@ spec:
         - digital signature
         - key encipherment
         - client auth
+    rbac:
+      commonName: system-id
+      issuer: osp-rootca-issuer-ovn-rbac
+      keyUsages:
+        - digital signature
+        - client auth
   caCerts: combined-ca-bundle
   containerImageFields:
   - EdpmNeutronMetadataAgentImage
