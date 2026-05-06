@@ -13,17 +13,6 @@ spec:
         name: neutron-metadata-extra-config
         optional: true
   tlsCerts:
-    default:
-      contents:
-      - dnsnames
-      - ips
-      networks:
-      - ctlplane
-      issuer: osp-rootca-issuer-ovn
-      keyUsages:
-        - digital signature
-        - key encipherment
-        - client auth
     rbac:
       commonName: system-id
       issuer: osp-rootca-issuer-ovn-rbac

@@ -52,7 +52,7 @@ type OpenstackDataPlaneServiceCert struct {
 	// When empty, CN defaults to the short hostname.
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=system-id
-	CommonName string `json:"commonName,omitempty"`
+	CommonName string `json:"commonName,omitempty" yaml:"commonName,omitempty"`
 
 	// EDPMRoleServiceName is the value of the <role>_service_name variable from
 	// the edpm-ansible role where this certificate is used. For example if the

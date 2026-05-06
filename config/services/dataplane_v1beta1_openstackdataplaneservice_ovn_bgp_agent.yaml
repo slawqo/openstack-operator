@@ -11,18 +11,6 @@ spec:
         name: ovn-bgp-agent-extra-config
         optional: true
   tlsCerts:
-    default:
-      contents:
-      - dnsnames
-      - ips
-      networks:
-      - ctlplane
-      issuer: osp-rootca-issuer-ovn
-      keyUsages:
-        - digital signature
-        - key encipherment
-        - server auth
-        - client auth
     rbac:
       commonName: system-id
       issuer: osp-rootca-issuer-ovn-rbac
